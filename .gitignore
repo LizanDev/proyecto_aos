@@ -7,3 +7,6 @@ __pycache__/
 .env
 .github/instructions/instrucciones.instructions.md
 .cursor/rules/rules.mdc
+.vscode
+.venv
+.cursor
