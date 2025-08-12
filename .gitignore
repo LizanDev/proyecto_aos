@@ -1,2 +1,9 @@
+.web
+*.db
+*.py[cod]
+assets/external/
+.states
+__pycache__/
 .env
 .github/instructions/instrucciones.instructions.md
+.cursor/rules/rules.mdc

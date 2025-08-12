@@ -1,0 +1,12 @@
+reflex
+supabase
+requests
+python-dotenv
+
+supabase
+python-dotenv
+requests
+fastapi
+uvicorn
+pydantic
+reflex==0.8.6

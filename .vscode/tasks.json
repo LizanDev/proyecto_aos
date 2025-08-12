@@ -1,0 +1,19 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Iniciar API FastAPI",
+			"type": "shell",
+			"command": "C:/Users/Usuario/Desktop/Proyecto AOS/.venv/Scripts/python.exe -m uvicorn api:app --reload --port 8000",
+			"isBackground": true,
+			"group": "build"
+		},
+		{
+			"label": "Verificar instalación de dependencias",
+			"type": "shell",
+			"command": "C:/Users/Usuario/Desktop/proyecto_aos/.venv/Scripts/python.exe -m pip check",
+			"isBackground": false,
+			"group": "build"
+		}
+	]
+}
