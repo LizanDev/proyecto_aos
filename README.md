@@ -21,12 +21,21 @@
    ```bash
    git clone https://github.com/tu_usuario/proyecto_aos.git
    cd proyecto_aos
-   ```
 2. **Crea y activa un entorno virtual:**
    ```bash
    python -m venv .venv
    .venv\Scripts\activate  # Windows
-   # source .venv/bin/activate  # Linux/Mac
+   ## 🖼️ Screenshots
+
+   A continuación puedes ver algunas capturas de pantalla del proyecto:
+
+   <p align="center">
+      <!-- Reemplaza los nombres de archivo por tus screenshots reales -->
+      <img src="assets/web1.jpg" alt="Screenshot 1" width="600"/>
+      <br>
+      <img src="assets/screenshot2.png" alt="Screenshot 2" width="600"/>
+   </p>
+
    ```
 3. **Instala las dependencias:**
    ```bash
@@ -82,6 +91,3 @@ Este proyecto está bajo la licencia MIT. Consulta el archivo `LICENSE` para má
 
 ---
 
-<p align="center">
-  <img src="assets/favicon.ico" width="80" alt="Logo Proyecto AOS" />
-</p>
