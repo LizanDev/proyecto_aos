@@ -26,8 +26,16 @@ class SimState(rx.State):
     bonus1: str = "rend"
     bonus2: str = "rend"
 
+    reinforced1: bool = False
+    reinforced2: bool = False
+    champion1: bool = False
+    champion2: bool = False
+
     result_text: str = ""
     result_lines: list[str] = []
+
+    unit1_attrs: dict = {}
+    unit2_attrs: dict = {}
 
     
     def on_load(self):
@@ -55,13 +63,95 @@ class SimState(rx.State):
         self.units2_map   = {n: _id for (_id, n) in rows}
         self.unit2_name   = self.units2_names[0] if self.units2_names else ""
 
-    def set_unit1_name(self, name: str): self.unit1_name = name
-    def set_unit2_name(self, name: str): self.unit2_name = name
-    def set_charge1(self, v: bool): self.charge1 = bool(v)
-    def set_charge2(self, v: bool): self.charge2 = bool(v)
+    def set_unit1_name(self, name: str): 
+        self.unit1_name = name
+        self.update_unit1_attrs()
+        
+    def set_unit2_name(self, name: str): 
+        self.unit2_name = name
+        self.update_unit2_attrs()
+        
+    def set_charge1(self, v: bool): 
+        self.charge1 = bool(v)
+        if not self.charge1:
+            self.bonus1 = ""   # o "rend" si prefieres default
+            
+    def set_charge2(self, v: bool): 
+        self.charge2 = bool(v)
+        if not self.charge2:
+            self.bonus2 = ""
+            
     def set_bonus1(self, v: str): self.bonus1 = v
     def set_bonus2(self, v: str): self.bonus2 = v
+    def set_reinforced1(self, v: bool): self.reinforced1 = bool(v)
+    def set_reinforced2(self, v: bool): self.reinforced2 = bool(v)
+    def set_champion1(self, v: bool): self.champion1 = bool(v)
+    def set_champion2(self, v: bool): self.champion2 = bool(v)
 
+    def update_unit1_attrs(self):
+        from services.unidad_service import obtener_unidad_por_id, obtener_ataques_totales
+        units_map = self.units1_map 
+        unit_name = self.unit1_name 
+        unit_id = units_map.get(unit_name, "")
+        if not unit_id:
+            self.unit1_attrs = {}
+            return
+        unidad = obtener_unidad_por_id(unit_id)
+        if not unidad:
+            self.unit1_attrs = {}
+            return
+        base_size = int(unidad.get("base_size", 1))
+        wounds = int(unidad.get("wounds", 1))
+        # Obtener ataques totales de las armas
+        attacks = obtener_ataques_totales(unit_id)
+        reinforced = self.reinforced1 
+        champion = self.champion1 
+        models = base_size * (2 if reinforced else 1)
+        total_attacks = models * attacks + (1 if champion else 0)
+        total_wounds = models * wounds
+        self.unit1_attrs = {
+            "models": models,
+            "wounds_per_model": wounds,
+            "total_wounds": total_wounds,
+            "attacks_per_model": attacks,
+            "total_attacks": total_attacks,
+            "champion": champion,
+            "reinforced": reinforced,
+        }
+
+    def update_unit2_attrs(self):
+        from services.unidad_service import obtener_unidad_por_id, obtener_ataques_totales
+        units_map = self.units2_map 
+        unit_name = self.unit2_name 
+        unit_id = units_map.get(unit_name, "")
+        if not unit_id:
+            self.unit2_attrs = {}
+            return
+        unidad = obtener_unidad_por_id(unit_id)
+        if not unidad:
+            self.unit2_attrs = {}
+            return
+        base_size = int(unidad.get("base_size", 1))
+        wounds = int(unidad.get("wounds", 1))
+        attacks = obtener_ataques_totales(unit_id)
+        reinforced = self.reinforced2 
+        champion = self.champion2 
+        models = base_size * (2 if reinforced else 1)
+        total_attacks = models * attacks + (1 if champion else 0)
+        total_wounds = models * wounds
+        self.unit2_attrs = {
+            "models": models,
+            "wounds_per_model": wounds,
+            "total_wounds": total_wounds,
+            "attacks_per_model": attacks,
+            "total_attacks": total_attacks,
+            "champion": champion,
+            "reinforced": reinforced,
+        }
+
+    def get_unit_attrs(self, left: bool) -> dict:
+        # Devuelve los atributos de la unidad seleccionada, calculando totales
+        return self.unit1_attrs if left else self.unit2_attrs
 
     def simulate(self):
         uid1 = self.units1_map.get(self.unit1_name, "")
@@ -84,10 +174,13 @@ def side_card(title: str, left: bool) -> rx.Component:
     units_items = S.units1_names if left else S.units2_names
     charge_val, set_charge = (S.charge1, S.set_charge1) if left else (S.charge2, S.set_charge2)
     bonus_val, set_bonus = (S.bonus1, S.set_bonus1) if left else (S.bonus2, S.set_bonus2)
+    reinforced_val, set_reinforced = (S.reinforced1, S.set_reinforced1) if left else (S.reinforced2, S.set_reinforced2)
+    champion_val, set_champion = (S.champion1, S.set_champion1) if left else (S.champion2, S.set_champion2)
+    attrs = S.unit1_attrs if left else S.unit2_attrs
 
     return rx.box(
         rx.vstack(
-            rx.text(title, class_name="text-sm font-semibold"),
+            rx.text(title, class_name="text-lg font-bold"),
             rx.select(
                 items=S.factions_names,
                 value=fac_val,
@@ -100,8 +193,12 @@ def side_card(title: str, left: bool) -> rx.Component:
                 on_change=set_unit,
                 placeholder="Unidad",
             ),
-            rx.checkbox("Ha cargado", is_checked=charge_val, on_change=set_charge),
-
+            rx.hstack(
+                rx.checkbox("Ha cargado", is_checked=charge_val, on_change=set_charge),
+                rx.checkbox("Reforzada", is_checked=reinforced_val, on_change=set_reinforced),
+                rx.checkbox("Campeón", is_checked=champion_val, on_change=set_champion),
+                class_name="gap-4"
+            ),
             rx.cond(
                 charge_val,
                 rx.box(
@@ -113,38 +210,34 @@ def side_card(title: str, left: bool) -> rx.Component:
                     ),
                     class_name="mt-2"
                 )
+            ),
+            rx.cond(
+                attrs != {},
+                rx.box(
+                    rx.text(f"Tamaño de unidad: {attrs.get('models', '-')}", class_name="text-xs"),
+                    rx.text(f"Heridas por miniatura: {attrs.get('wounds_per_model', '-')}", class_name="text-xs"),
+                    rx.text(f"Heridas totales: {attrs.get('total_wounds', '-')}", class_name="text-xs"),
+                    rx.text(f"Ataques por miniatura: {attrs.get('attacks_per_model', '-')}", class_name="text-xs"),
+                    rx.text(f"Ataques totales: {attrs.get('total_attacks', '-')}", class_name="text-xs"),
+                    class_name="mt-2 p-2 rounded bg-zinc-800"
+                )
             )
         ),
         class_name="flex-1 p-4 rounded-xl border border-zinc-800 bg-zinc-900",
-        )
-    
-
-def set_charge1(self, v: bool):
-    self.charge1 = bool(v)
-    if not self.charge1:
-        self.bonus1 = ""   # o "rend" si prefieres default
-
-def set_charge2(self, v: bool):
-    self.charge2 = bool(v)
-    if not self.charge2:
-        self.bonus2 = ""
-
+    )
 
 def index() -> rx.Component:
-    # Welcome Page (Index)
-    return rx.box(
+    return rx.container(
         rx.vstack(
-            rx.text("Simulador de Combate", class_name="text-2xl font-bold text-center"),
+            rx.text("Simulador de Combate", class_name="text-3xl font-bold text-center"),
             rx.text("Warhammer Age of Sigmar", class_name="text-sm opacity-70 text-center"),
-            rx.hstack(
+            rx.grid(
                 side_card("Atacante", True),
                 side_card("Defensor", False),
-                class_name="w-full gap-6",
+                class_name="grid grid-cols-1 lg:grid-cols-2 gap-6",
             ),
-            rx.box("Resultado", class_name="w-full p4 rounded-xl border"),
-            class_name="max-w-6xl mx-auto gap-6 p-6",
-        ),
-        class_name="min-h-screen bg-zinc-950 text-zinc-100",
+            class_name="max-w-6xl mx-auto py-8 space-y-8",
+        )
     )
 
 app = rx.App()

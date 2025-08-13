@@ -1,7 +1,6 @@
 import os
 from supabase import create_client
 from dotenv import load_dotenv
-from typing import Optional, Dict, List
 
 load_dotenv()
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -12,15 +11,12 @@ def obtener_unidad_por_id(unit_id: str) -> dict:
     res = sb.table("units").select("*").eq("id", unit_id).single().execute()
     return res.data if res and res.data else {}
 
-def obtener_armas_de_unidad(unit_id: str) -> List[Dict]:
-    resp = sb.table("unit_weapons").select("*").eq("unit_id", unit_id).execute()
-    return resp.data or []
-
 def obtener_ataques_totales(unit_id: str) -> int:
     res = sb.table("unit_weapons").select("attacks_formula").eq("unit_id", unit_id).execute()
     armas = res.data if res and res.data else []
     total = 0
     for arma in armas:
+        # Si attacks_formula es un número, lo sumamos. Si es texto tipo "2d6", puedes adaptar el parseo.
         try:
             total += int(arma.get("attacks_formula", 0))
         except Exception:
