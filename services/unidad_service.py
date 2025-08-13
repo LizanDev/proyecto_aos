@@ -26,3 +26,15 @@ def obtener_ataques_totales(unit_id: str) -> int:
         except Exception:
             pass  # Si es "1d3" o similar, ignóralo o implementa un parser si lo necesitas
     return total
+
+def get_factions() -> List[tuple[str, str]]:
+    res = sb.table("factions").select("id,name").order("name").execute()
+    rows = res.data or []
+    return [(r["id"], r["name"]) for r in rows]
+
+def get_units_by_faction(faction_id: str) -> List[tuple[str, str]]:
+    if not faction_id:
+        return []
+    res = sb.table("units").select("id,name").eq("faction_id", faction_id).order("name").execute()
+    rows = res.data or []
+    return [(r["id"], r["name"]) for r in rows]

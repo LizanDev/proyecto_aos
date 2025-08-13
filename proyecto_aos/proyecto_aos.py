@@ -1,7 +1,7 @@
 """Welcome to Reflex! This file outlines the steps to create a basic app."""
 import reflex as rx
 from typing import List,Dict,Tuple
-from .data import get_factions, get_units_by_faction
+from services.unidad_service import get_factions, get_units_by_faction
 
 
 from rxconfig import config
@@ -39,14 +39,14 @@ class SimState(rx.State):
 
     
     def on_load(self):
-        from .data import get_factions
+        
         rows = get_factions()  # [(id, name)]
         self.factions_names = [n for (_id, n) in rows]
         self.factions_map   = {n: _id for (_id, n) in rows}
 
    
     def set_faction1_name(self, name: str):
-        from .data import get_units_by_faction
+        
         self.faction1_name = name
         fid = self.factions_map.get(name, "")
         rows = get_units_by_faction(fid)
@@ -55,7 +55,7 @@ class SimState(rx.State):
         self.unit1_name   = self.units1_names[0] if self.units1_names else ""
 
     def set_faction2_name(self, name: str):
-        from .data import get_units_by_faction
+        
         self.faction2_name = name
         fid = self.factions_map.get(name, "")
         rows = get_units_by_faction(fid)
