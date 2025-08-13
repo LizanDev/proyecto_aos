@@ -230,6 +230,8 @@ def side_card(title: str, left: bool) -> rx.Component:
     attrs = S.unit1_attrs if left else S.unit2_attrs
     can_be_reinforced = attrs.get("can_be_reinforced", False)
 
+    vstack_class = "items-end text-right" if not left else ""
+    box_class = "flex-1 p-4 rounded-xl border border-zinc-800 bg-zinc-900" + (" text-right" if not left else "")
     return rx.box(
         rx.vstack(
             rx.text(title, class_name="text-lg font-bold"),
@@ -251,7 +253,7 @@ def side_card(title: str, left: bool) -> rx.Component:
                     "Reforzada",
                     is_checked=reinforced_val,
                     on_change=set_reinforced,
-                    disabled=~can_be_reinforced  # Usa ~ en vez de not
+                    disabled=~can_be_reinforced
                 ),
                 rx.checkbox("Campeón", is_checked=champion_val, on_change=set_champion),
                 class_name="gap-4"
@@ -282,8 +284,8 @@ def side_card(title: str, left: bool) -> rx.Component:
                     class_name="mt-2 p-2 rounded bg-zinc-800"
                 )
             )
-        ),
-        class_name="flex-1 p-4 rounded-xl border border-zinc-800 bg-zinc-900",
+        , class_name=vstack_class),
+        class_name=box_class,
     )
 
 def index() -> rx.Component:
