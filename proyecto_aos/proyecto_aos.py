@@ -93,7 +93,7 @@ class SimState(rx.State):
     def set_champion2(self, v: bool): self.champion2 = bool(v)
 
     def update_unit1_attrs(self):
-        from services.unidad_service import obtener_unidad_por_id, obtener_ataques_totales
+        from services.unidad_service import obtener_unidad_por_id, obtener_armas_de_unidad, obtener_ataques_totales
         units_map = self.units1_map 
         unit_name = self.unit1_name 
         unit_id = units_map.get(unit_name, "")
@@ -107,12 +107,30 @@ class SimState(rx.State):
         base_size = int(unidad.get("base_size", 1))
         wounds = int(unidad.get("wounds", 1))
         attacks = obtener_ataques_totales(unit_id)
-        can_be_reinforced = bool(unidad.get("reinforced", False))  # <-- aquí el cambio
+        can_be_reinforced = bool(unidad.get("reinforced", False))
         reinforced = self.reinforced1 if can_be_reinforced else False
         champion = self.champion1 
         models = base_size * (2 if reinforced else 1)
         total_attacks = models * attacks + (1 if champion else 0)
         total_wounds = models * wounds
+
+        # Obtener arma principal
+        armas = obtener_armas_de_unidad(unit_id)
+        arma = armas[0] if armas else {}
+        base_rend = int(arma.get("rend", 0)) if arma.get("rend") is not None else 0
+        base_damage = arma.get("damage_formula", "1")
+        # Ajustar rend y daño si ha cargado
+        rend = base_rend
+        damage = base_damage
+        if self.charge1:
+            if self.bonus1 == "Rend -1":
+                rend = base_rend - 1
+            elif self.bonus1 == "Daño +1":
+                try:
+                    damage = str(int(base_damage) + 1)
+                except Exception:
+                    damage = f"{base_damage}+1"
+
         self.unit1_attrs = {
             "models": models,
             "wounds_per_model": wounds,
@@ -122,12 +140,15 @@ class SimState(rx.State):
             "champion": champion,
             "reinforced": reinforced,
             "can_be_reinforced": can_be_reinforced,
+            "arma_nombre": arma.get("name", "-"),
+            "arma_rend": rend,
+            "arma_damage": damage,
         }
         if not can_be_reinforced:
             self.reinforced1 = False
 
     def update_unit2_attrs(self):
-        from services.unidad_service import obtener_unidad_por_id, obtener_ataques_totales
+        from services.unidad_service import obtener_unidad_por_id, obtener_armas_de_unidad, obtener_ataques_totales
         units_map = self.units2_map 
         unit_name = self.unit2_name 
         unit_id = units_map.get(unit_name, "")
@@ -141,12 +162,28 @@ class SimState(rx.State):
         base_size = int(unidad.get("base_size", 1))
         wounds = int(unidad.get("wounds", 1))
         attacks = obtener_ataques_totales(unit_id)
-        can_be_reinforced = bool(unidad.get("reinforced", False))  # <-- aquí el cambio
+        can_be_reinforced = bool(unidad.get("reinforced", False))
         reinforced = self.reinforced2 if can_be_reinforced else False
         champion = self.champion2 
         models = base_size * (2 if reinforced else 1)
         total_attacks = models * attacks + (1 if champion else 0)
         total_wounds = models * wounds
+
+        armas = obtener_armas_de_unidad(unit_id)
+        arma = armas[0] if armas else {}
+        base_rend = int(arma.get("rend", 0)) if arma.get("rend") is not None else 0
+        base_damage = arma.get("damage_formula", "1")
+        rend = base_rend
+        damage = base_damage
+        if self.charge2:
+            if self.bonus2 == "Rend -1":
+                rend = base_rend - 1
+            elif self.bonus2 == "Daño +1":
+                try:
+                    damage = str(int(base_damage) + 1)
+                except Exception:
+                    damage = f"{base_damage}+1"
+
         self.unit2_attrs = {
             "models": models,
             "wounds_per_model": wounds,
@@ -156,6 +193,9 @@ class SimState(rx.State):
             "champion": champion,
             "reinforced": reinforced,
             "can_be_reinforced": can_be_reinforced,
+            "arma_nombre": arma.get("name", "-"),
+            "arma_rend": rend,
+            "arma_damage": damage,
         }
         if not can_be_reinforced:
             self.reinforced2 = False
@@ -236,6 +276,9 @@ def side_card(title: str, left: bool) -> rx.Component:
                     rx.text(f"Heridas totales: {attrs.get('total_wounds', '-')}", class_name="text-xs"),
                     rx.text(f"Ataques por miniatura: {attrs.get('attacks_per_model', '-')}", class_name="text-xs"),
                     rx.text(f"Ataques totales: {attrs.get('total_attacks', '-')}", class_name="text-xs"),
+                    rx.text(f"Arma principal: {attrs.get('arma_nombre', '-')}", class_name="text-xs"),
+                    rx.text(f"Rend: {attrs.get('arma_rend', '-')}", class_name="text-xs"),
+                    rx.text(f"Daño: {attrs.get('arma_damage', '-')}", class_name="text-xs"),
                     class_name="mt-2 p-2 rounded bg-zinc-800"
                 )
             )

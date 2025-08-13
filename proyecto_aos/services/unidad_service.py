@@ -13,7 +13,8 @@ def obtener_unidad_por_id(unit_id: str) -> dict:
     return res.data if res and res.data else {}
 
 def obtener_armas_de_unidad(unit_id: str) -> List[Dict]:
-    return []
+    res = sb.table("unit_weapons").select("*").eq("unit_id", unit_id).execute()
+    return res.data if res and res.data else []
 
 def obtener_ataques_totales(unit_id: str) -> int:
     return 0
