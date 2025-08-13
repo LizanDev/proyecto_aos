@@ -83,8 +83,12 @@ class SimState(rx.State):
             
     def set_bonus1(self, v: str): self.bonus1 = v
     def set_bonus2(self, v: str): self.bonus2 = v
-    def set_reinforced1(self, v: bool): self.reinforced1 = bool(v)
-    def set_reinforced2(self, v: bool): self.reinforced2 = bool(v)
+    def set_reinforced1(self, v: bool): 
+        self.reinforced1 = bool(v)
+        self.update_unit1_attrs()  # <-- actualiza los atributos al marcar/desmarcar
+    def set_reinforced2(self, v: bool): 
+        self.reinforced2 = bool(v)
+        self.update_unit2_attrs()  # <-- actualiza los atributos al marcar/desmarcar
     def set_champion1(self, v: bool): self.champion1 = bool(v)
     def set_champion2(self, v: bool): self.champion2 = bool(v)
 
@@ -102,9 +106,9 @@ class SimState(rx.State):
             return
         base_size = int(unidad.get("base_size", 1))
         wounds = int(unidad.get("wounds", 1))
-        # Obtener ataques totales de las armas
         attacks = obtener_ataques_totales(unit_id)
-        reinforced = self.reinforced1 
+        can_be_reinforced = bool(unidad.get("reinforced", False))  # <-- aquí el cambio
+        reinforced = self.reinforced1 if can_be_reinforced else False
         champion = self.champion1 
         models = base_size * (2 if reinforced else 1)
         total_attacks = models * attacks + (1 if champion else 0)
@@ -117,7 +121,10 @@ class SimState(rx.State):
             "total_attacks": total_attacks,
             "champion": champion,
             "reinforced": reinforced,
+            "can_be_reinforced": can_be_reinforced,
         }
+        if not can_be_reinforced:
+            self.reinforced1 = False
 
     def update_unit2_attrs(self):
         from services.unidad_service import obtener_unidad_por_id, obtener_ataques_totales
@@ -134,7 +141,8 @@ class SimState(rx.State):
         base_size = int(unidad.get("base_size", 1))
         wounds = int(unidad.get("wounds", 1))
         attacks = obtener_ataques_totales(unit_id)
-        reinforced = self.reinforced2 
+        can_be_reinforced = bool(unidad.get("reinforced", False))  # <-- aquí el cambio
+        reinforced = self.reinforced2 if can_be_reinforced else False
         champion = self.champion2 
         models = base_size * (2 if reinforced else 1)
         total_attacks = models * attacks + (1 if champion else 0)
@@ -147,7 +155,10 @@ class SimState(rx.State):
             "total_attacks": total_attacks,
             "champion": champion,
             "reinforced": reinforced,
+            "can_be_reinforced": can_be_reinforced,
         }
+        if not can_be_reinforced:
+            self.reinforced2 = False
 
     def get_unit_attrs(self, left: bool) -> dict:
         # Devuelve los atributos de la unidad seleccionada, calculando totales
@@ -177,6 +188,7 @@ def side_card(title: str, left: bool) -> rx.Component:
     reinforced_val, set_reinforced = (S.reinforced1, S.set_reinforced1) if left else (S.reinforced2, S.set_reinforced2)
     champion_val, set_champion = (S.champion1, S.set_champion1) if left else (S.champion2, S.set_champion2)
     attrs = S.unit1_attrs if left else S.unit2_attrs
+    can_be_reinforced = attrs.get("can_be_reinforced", False)
 
     return rx.box(
         rx.vstack(
@@ -195,7 +207,12 @@ def side_card(title: str, left: bool) -> rx.Component:
             ),
             rx.hstack(
                 rx.checkbox("Ha cargado", is_checked=charge_val, on_change=set_charge),
-                rx.checkbox("Reforzada", is_checked=reinforced_val, on_change=set_reinforced),
+                rx.checkbox(
+                    "Reforzada",
+                    is_checked=reinforced_val,
+                    on_change=set_reinforced,
+                    disabled=~can_be_reinforced  # Usa ~ en vez de not
+                ),
                 rx.checkbox("Campeón", is_checked=champion_val, on_change=set_champion),
                 class_name="gap-4"
             ),
