@@ -4,7 +4,7 @@ import os
 from dotenv import load_dotenv
 import re
 
-load_dotenv()
+'''load_dotenv()
 
 url = os.getenv("SUPABASE_URL")
 key = os.getenv("SUPABASE_ANON_KEY")
@@ -12,7 +12,7 @@ key = os.getenv("SUPABASE_ANON_KEY")
 if not url or not key:
     raise ValueError("No se han encontrado las variables SUPABASE_URL o SUPABASE_ANON_KEY")
 
-supabase: Client = create_client(url, key)
+supabase: Client = create_client(url, key)'''
 
 _dice_term = re.compile(r"\s*([+-]?)\s*(?:(\d*)[dD](\d+)|(\d+))\s*")
 

@@ -23,8 +23,8 @@ class SimState(rx.State):
 
     charge1: bool = False
     charge2: bool = False
-    bonus1: str = "rend"
-    bonus2: str = "rend"
+    bonus1: str = "Rend -1"
+    bonus2: str = "Rend -1"
 
     reinforced1: bool = False
     reinforced2: bool = False
@@ -74,23 +74,33 @@ class SimState(rx.State):
     def set_charge1(self, v: bool): 
         self.charge1 = bool(v)
         if not self.charge1:
-            self.bonus1 = ""   # o "rend" si prefieres default
+            self.bonus1 = ""
+        self.update_unit1_attrs()
             
     def set_charge2(self, v: bool): 
         self.charge2 = bool(v)
         if not self.charge2:
             self.bonus2 = ""
-            
-    def set_bonus1(self, v: str): self.bonus1 = v
-    def set_bonus2(self, v: str): self.bonus2 = v
+        self.update_unit2_attrs()
+
+    def set_bonus1(self, v: str): 
+        self.bonus1 = v
+        self.update_unit1_attrs()
+    def set_bonus2(self, v: str): 
+        self.bonus2 = v
+        self.update_unit2_attrs()
     def set_reinforced1(self, v: bool): 
         self.reinforced1 = bool(v)
-        self.update_unit1_attrs()  # <-- actualiza los atributos al marcar/desmarcar
+        self.update_unit1_attrs() 
     def set_reinforced2(self, v: bool): 
         self.reinforced2 = bool(v)
-        self.update_unit2_attrs()  # <-- actualiza los atributos al marcar/desmarcar
-    def set_champion1(self, v: bool): self.champion1 = bool(v)
-    def set_champion2(self, v: bool): self.champion2 = bool(v)
+        self.update_unit2_attrs()
+    def set_champion1(self, v: bool): 
+        self.champion1 = bool(v)
+        self.update_unit1_attrs()
+    def set_champion2(self, v: bool): 
+        self.champion2 = bool(v)
+        self.update_unit2_attrs()
 
     def update_unit1_attrs(self):
         from services.unidad_service import obtener_unidad_por_id, obtener_armas_de_unidad, obtener_ataques_totales
