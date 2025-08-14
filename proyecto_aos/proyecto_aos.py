@@ -23,8 +23,8 @@ class SimState(rx.State):
 
     charge1: bool = False
     charge2: bool = False
-    bonus1: str = "Rend -1"
-    bonus2: str = "Rend -1"
+    bonus1: str = ""  # <-- Cambia aquí
+    bonus2: str = ""  # <-- Cambia aquí
 
     reinforced1: bool = False
     reinforced2: bool = False
@@ -39,12 +39,16 @@ class SimState(rx.State):
 
     
     def on_load(self):
-        
         rows = get_factions()  # [(id, name)]
         self.factions_names = [n for (_id, n) in rows]
         self.factions_map   = {n: _id for (_id, n) in rows}
+        '''self.charge1 = False
+        self.charge2 = False
+        self.bonus1 = ""
+        self.bonus2 = ""'''
+        self.update_unit1_attrs()
+        self.update_unit2_attrs()
 
-   
     def set_faction1_name(self, name: str):
         
         self.faction1_name = name
@@ -299,17 +303,18 @@ def side_card(title: str, left: bool) -> rx.Component:
     )
 
 def index() -> rx.Component:
-    return rx.container(
+    return rx.box(
         rx.vstack(
             rx.text("Simulador de Combate", class_name="text-3xl font-bold text-center"),
             rx.text("Warhammer Age of Sigmar", class_name="text-sm opacity-70 text-center"),
             rx.grid(
                 side_card("Atacante", True),
                 side_card("Defensor", False),
-                class_name="grid grid-cols-1 lg:grid-cols-2 gap-6",
+                class_name="w-full grid grid-cols-1 lg:grid-cols-2 gap-6",
             ),
-            class_name="max-w-6xl mx-auto py-8 space-y-8",
-        )
+            class_name="w-full mx-auto py-8 space-y-8",
+        ),
+        class_name="w-full px-4 md:px-12",  # <-- padding lateral aquí
     )
 
 app = rx.App()
