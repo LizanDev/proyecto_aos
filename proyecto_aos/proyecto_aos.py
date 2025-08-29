@@ -257,7 +257,6 @@ def side_card(title: str, left: bool) -> rx.Component:
         "height": "100%",
         "zIndex": 0,
         "objectFit": "cover",
-        "opacity": 0.4,
         "right": 0 if left else None,
         "left": 0 if not left else None,
         **({"transform": "scaleX(-1)"} if not left else {}),
@@ -273,13 +272,12 @@ def side_card(title: str, left: bool) -> rx.Component:
         # Gradiente aún más claro para máxima visibilidad
         "background": "linear-gradient(to right, rgba(24,24,27,0.25) 0%, rgba(24,24,27,0.10) 30%, rgba(24,24,27,0.0) 80%)" if left else "none",
     }
-    overlay = rx.box(
-        rx.cond(
-            img_url is not None and img_url != "",
-            rx.fragment(
-                rx.image(src=img_url, class_name="h-40", style=overlay_style),
-                rx.box(style=gradient_style)
-            )
+    # Solo renderiza el overlay si hay imagen válida y no está vacía ni es None ni es string vacío
+    overlay = rx.cond(
+        img_url & (img_url != ""),
+        rx.box(
+            rx.image(src=img_url, class_name="h-40", style=overlay_style),
+            rx.box(style=gradient_style)
         )
     )
     content = rx.vstack(
