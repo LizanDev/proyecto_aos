@@ -157,6 +157,7 @@ class SimState(rx.State):
             "arma_nombre": arma.get("name", "-"),
             "arma_rend": rend,
             "arma_damage": damage,
+            "img_url": unidad.get("img_url", ""),
         }
         if not can_be_reinforced:
             self.reinforced1 = False
@@ -210,6 +211,7 @@ class SimState(rx.State):
             "arma_nombre": arma.get("name", "-"),
             "arma_rend": rend,
             "arma_damage": damage,
+            "img_url": unidad.get("img_url", ""),
         }
         if not can_be_reinforced:
             self.reinforced2 = False
@@ -243,62 +245,99 @@ def side_card(title: str, left: bool) -> rx.Component:
     champion_val, set_champion = (S.champion1, S.set_champion1) if left else (S.champion2, S.set_champion2)
     attrs = S.unit1_attrs if left else S.unit2_attrs
     can_be_reinforced = attrs.get("can_be_reinforced", False)
+    img_url = attrs.get("img_url", None)
 
     vstack_class = "items-end text-right" if not left else ""
-    box_class = "flex-1 p-4 rounded-xl border border-zinc-800 bg-zinc-900" + (" text-right" if not left else "")
-    return rx.box(
-        rx.vstack(
-            rx.text(title, class_name="text-lg font-bold"),
-            rx.select(
-                items=S.factions_names,
-                value=fac_val,
-                on_change=set_fac,
-                placeholder="Facción",
-            ),
-            rx.select(
-                items=units_items,
-                value=unit_val,
-                on_change=set_unit,
-                placeholder="Unidad",
-            ),
-            rx.hstack(
-                rx.checkbox("Ha cargado", is_checked=charge_val, on_change=set_charge),
-                rx.checkbox(
-                    "Reforzada",
-                    is_checked=reinforced_val,
-                    on_change=set_reinforced,
-                    disabled=~can_be_reinforced
-                ),
-                rx.checkbox("Campeón", is_checked=champion_val, on_change=set_champion),
-                class_name="gap-4"
-            ),
-            rx.cond(
-                charge_val,
-                rx.box(
-                    rx.radio_group(
-                        items=["Rend -1", "Daño +1"],
-                        value=bonus_val,
-                        on_change=set_bonus,
-                        class_name="gap-2",
-                    ),
-                    class_name="mt-2"
-                )
-            ),
-            rx.cond(
-                attrs != {},
-                rx.box(
-                    rx.text(f"Tamaño de unidad: {attrs.get('models', '-')}", class_name="text-xs"),
-                    rx.text(f"Heridas por miniatura: {attrs.get('wounds_per_model', '-')}", class_name="text-xs"),
-                    rx.text(f"Heridas totales: {attrs.get('total_wounds', '-')}", class_name="text-xs"),
-                    rx.text(f"Ataques por miniatura: {attrs.get('attacks_per_model', '-')}", class_name="text-xs"),
-                    rx.text(f"Ataques totales: {attrs.get('total_attacks', '-')}", class_name="text-xs"),
-                    rx.text(f"Arma principal: {attrs.get('arma_nombre', '-')}", class_name="text-xs"),
-                    rx.text(f"Rend: {attrs.get('arma_rend', '-')}", class_name="text-xs"),
-                    rx.text(f"Daño: {attrs.get('arma_damage', '-')}", class_name="text-xs"),
-                    class_name="mt-2 p-2 rounded bg-zinc-800"
-                )
+    box_class = "flex-1 p-4 rounded-xl border border-zinc-800 bg-zinc-900 relative overflow-hidden" + (" text-right" if not left else "")
+    # Overlay con alineación condicional y gradiente en el lado izquierdo
+    overlay_style = {
+        "position": "absolute",
+        "top": 0,
+        "width": "60%",
+        "height": "100%",
+        "zIndex": 0,
+        "objectFit": "cover",
+        "opacity": 0.4,
+        "right": 0 if left else None,
+        "left": 0 if not left else None,
+        **({"transform": "scaleX(-1)"} if not left else {}),
+    }
+    gradient_style = {
+        "position": "absolute",
+        "top": 0,
+        "left": 0,
+        "width": "100%",
+        "height": "100%",
+        "zIndex": 1,
+        "pointerEvents": "none",
+        # Gradiente aún más claro para máxima visibilidad
+        "background": "linear-gradient(to right, rgba(24,24,27,0.25) 0%, rgba(24,24,27,0.10) 30%, rgba(24,24,27,0.0) 80%)" if left else "none",
+    }
+    overlay = rx.box(
+        rx.cond(
+            img_url is not None and img_url != "",
+            rx.fragment(
+                rx.image(src=img_url, class_name="h-40", style=overlay_style),
+                rx.box(style=gradient_style)
             )
-        , class_name=vstack_class),
+        )
+    )
+    content = rx.vstack(
+        rx.text(title, class_name="text-lg font-bold z-10"),
+        rx.select(
+            items=S.factions_names,
+            value=fac_val,
+            on_change=set_fac,
+            placeholder="Facción",
+        ),
+        rx.select(
+            items=units_items,
+            value=unit_val,
+            on_change=set_unit,
+            placeholder="Unidad",
+        ),
+        rx.hstack(
+            rx.checkbox("Ha cargado", is_checked=charge_val, on_change=set_charge),
+            rx.checkbox(
+                "Reforzada",
+                is_checked=reinforced_val,
+                on_change=set_reinforced,
+                disabled=~can_be_reinforced
+            ),
+            rx.checkbox("Campeón", is_checked=champion_val, on_change=set_champion),
+            class_name="gap-4"
+        ),
+        rx.cond(
+            charge_val,
+            rx.box(
+                rx.radio_group(
+                    items=["Rend -1", "Daño +1"],
+                    value=bonus_val,
+                    on_change=set_bonus,
+                    class_name="gap-2",
+                ),
+                class_name="mt-2"
+            )
+        ),
+        rx.cond(
+            attrs != {},
+            rx.box(
+                rx.text(f"Tamaño de unidad: {attrs.get('models', '-')}" , class_name="text-xs"),
+                rx.text(f"Heridas por miniatura: {attrs.get('wounds_per_model', '-')}" , class_name="text-xs"),
+                rx.text(f"Heridas totales: {attrs.get('total_wounds', '-')}" , class_name="text-xs"),
+                rx.text(f"Ataques por miniatura: {attrs.get('attacks_per_model', '-')}" , class_name="text-xs"),
+                rx.text(f"Ataques totales: {attrs.get('total_attacks', '-')}" , class_name="text-xs"),
+                rx.text(f"Arma principal: {attrs.get('arma_nombre', '-')}" , class_name="text-xs"),
+                rx.text(f"Rend: {attrs.get('arma_rend', '-')}" , class_name="text-xs"),
+                rx.text(f"Daño: {attrs.get('arma_damage', '-')}" , class_name="text-xs"),
+                class_name="mt-2 p-2 rounded bg-zinc-800 z-10"
+            )
+        ),
+        class_name=vstack_class + " relative z-10"
+    )
+    return rx.box(
+        overlay,
+        content,
         class_name=box_class,
     )
 
