@@ -3,6 +3,7 @@ from combar_logic import combate_media
 import os
 from dotenv import load_dotenv
 import re
+from services.unidad_service import obtener_unidad_por_id, obtener_armas_de_unidad
 
 '''load_dotenv()
 
@@ -59,16 +60,7 @@ def dice_average(expr: str | int | float | None) -> float:
             pass
     return total
 
-def obtener_unidad_por_id(unid_id: str):
-    response = supabase.table("units").select("*").eq("id", unid_id).single().execute()
-    return response.data
 
-
-def obtener_armas_de_unidad(unit_id: str):
-    resp = supabase.table("unit_weapons").select("*").eq("unit_id", unit_id).execute()
-    return resp.data or []
-
-    
 def combate_media_multiarmas(unidad_atac: dict, unidad_def: dict, carga: bool = False):
     # 1) Cargar todas las armas del atacante
     armas = obtener_armas_de_unidad(unidad_atac["id"])
@@ -190,8 +182,8 @@ def resumen_unidad(unidad: dict, arma: dict, carga: bool = False) -> dict:
 
 
 if __name__ == "__main__":
-    atacante_id = '87b4d112-0b36-4053-bbc1-5e0e1313328e'
-    defensor_id = '15daddf4-52d8-42d8-87e0-19b0f02f4204'
+    atacante_id = '7ff18894-a6e9-4203-94fa-fbea1f4ad227'
+    defensor_id = '500c03e5-085b-4c5f-acbf-9d78a8d40591'
 
 
     atacante_u = obtener_unidad_por_id(atacante_id)
@@ -204,6 +196,39 @@ total_general, detalle, res_atac, res_def = combate_media_multiarmas(atacante_u,
 print(f"— Atacante: {res_atac['name']}  modelos={res_atac['models']}, ataques_totales={res_atac['total_attacks']:.2f}, heridas_totales={res_atac['total_wounds']}")
 print(f"— Defensor:  {res_def['name']}   modelos={res_def['models']},  heridas_totales={res_def['total_wounds']}")
 print(f"\nHeridas esperadas totales (todas las armas): {total_general:.2f}")
+
+# Calcular bajas del defensor
+bajas_defensor = int(total_general // res_def['wounds_per_model']) if res_def['wounds_per_model'] else 0
+print(f"Bajas estimadas del defensor: {bajas_defensor}")
+
+# Retirar bajas del defensor
+models_def_restantes = max(res_def['models'] - bajas_defensor, 0)
+print(f"Miniaturas restantes del defensor: {models_def_restantes}")
+
+# Simular respuesta del defensor si quedan miniaturas
+if models_def_restantes > 0:
+    # Crear copia del defensor con las minis restantes
+    defensor_u_resp = dict(defensor_u)
+    defensor_u_resp['base_size'] = models_def_restantes
+    # El defensor ataca al atacante
+    total_def, detalle_def, res_def_resp, res_atac_resp = combate_media_multiarmas(defensor_u_resp, atacante_u, carga=False)
+    print(f"\nRespuesta del defensor:")
+    print(f"Heridas esperadas al atacante: {total_def:.2f}")
+    bajas_atacante = int(total_def // res_atac['wounds_per_model']) if res_atac['wounds_per_model'] else 0
+    print(f"Bajas estimadas del atacante: {bajas_atacante}")
+    models_atac_restantes = max(res_atac['models'] - bajas_atacante, 0)
+    print(f"Miniaturas restantes del atacante: {models_atac_restantes}")
+else:
+    print("El defensor no tiene miniaturas para responder.")
+
+# Determinar ganador
+if bajas_defensor >= res_def['models'] and (models_atac_restantes if 'models_atac_restantes' in locals() else res_atac['models']) > 0:
+    ganador = res_atac['name']
+elif models_atac_restantes == 0:
+    ganador = res_def['name']
+else:
+    ganador = 'Empate o combate indeciso'
+print(f"Ganador estimado: {ganador}")
 
 for nombre_arma, out in detalle:
     total_arma = out["total_heridas"]
