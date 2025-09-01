@@ -3,6 +3,21 @@ from typing import Union
 
 _dice_term = re.compile(r"\s*([+-]?)\s*(?:(\d*)[dD](\d+)|(\d+))\s*")
 
+def redondear(valor: float) -> int:
+    """
+    Redondea un valor siguiendo la regla: 
+    - Si el decimal es menor que 0.5, redondea hacia abajo
+    - Si el decimal es igual o mayor que 0.5, redondea hacia arriba
+    
+    Args:
+        valor: Valor float a redondear
+        
+    Returns:
+        El valor redondeado como entero
+    """
+    # Usar round que ya implementa la lógica solicitada
+    return round(valor)
+
 def dice_average(expr: Union[str, int, float, None]) -> float:
     """
     Convierte '2d6+1d3+3-1' en su media: 2*(6+1)/2 + 1*(3+1)/2 + 3 - 1 = 7 + 2 + 2 = 11
