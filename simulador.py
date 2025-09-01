@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 from supabase import create_client, Client
 from combar_logic import combate_media
 from services.unidad_service import obtener_unidad_por_id, obtener_armas_de_unidad
+from utils import redondear
 
 # Expresión regular para parsear términos de dados
 _dice_term = re.compile(r"\s*([+-]?)\s*(?:(\d*)[dD](\d+)|(\d+))\s*")
@@ -334,6 +335,7 @@ def mostrar_detalle_armas_en_combate(unidad: Dict[str, Any], detalle: List[Tuple
         detalle: Detalles de daño por arma
         miniaturas_vivas: Número de miniaturas vivas
     """
+    from utils import redondear
     armas = obtener_armas_de_unidad(unidad.get("id", ""))
     
     for nombre_arma, out in detalle:
@@ -351,7 +353,7 @@ def mostrar_detalle_armas_en_combate(unidad: Dict[str, Any], detalle: List[Tuple
         
         # Calcular críticos y efectos
         p_6 = 1.0 / 6.0
-        num_criticos = int(ataques_arma * p_6)
+        num_criticos = redondear(ataques_arma * p_6)
         
         # Formatear la información sobre críticos
         crit_info = ""
@@ -359,17 +361,17 @@ def mostrar_detalle_armas_en_combate(unidad: Dict[str, Any], detalle: List[Tuple
         heridas_mortales = out.get('mortales_post_ward', 0)
         
         if out.get('crit_effect') == 'mortal_wounds':
-            crit_info = f" → {int(heridas_mortales)} mortales (ignoran armadura)"
+            crit_info = f" → {redondear(heridas_mortales)} mortales (ignoran armadura)"
         elif out.get('crit_effect') == 'auto_wound':
-            crit_info = f" → {int(out.get('no_salv_autow_post_ward', 0))} heridas auto."
+            crit_info = f" → {redondear(out.get('no_salv_autow_post_ward', 0))} heridas auto."
             
         # Mostrar el desglose de heridas normales y mortales
         desglose = ""
         if heridas_mortales > 0:
-            desglose = f" (normal={heridas_normales:.2f} + mort={int(heridas_mortales)})"
+            desglose = f" (normal={redondear(heridas_normales)} + mort={redondear(heridas_mortales)})"
             
-        print(f"    - {nombre_arma}: ataques={ataques_arma:.2f} | criticos={num_criticos}{crit_info} | " 
-              f"heridas={out['total_heridas']:.2f}{desglose} | salvadas={out.get('heridas_salvadas', 0):.2f}")
+        print(f"    - {nombre_arma}: ataques={redondear(ataques_arma)} | criticos={num_criticos}{crit_info} | " 
+              f"heridas={redondear(out['total_heridas'])}{desglose} | salvadas={redondear(out.get('heridas_salvadas', 0))}")
 
 
 def simular_combate_completo(atacante_u: Dict[str, Any], defensor_u: Dict[str, Any], 
@@ -407,8 +409,8 @@ def simular_combate_completo(atacante_u: Dict[str, Any], defensor_u: Dict[str, A
         
         # Calcular el total de ataques correctamente (ataques por mini * minis)
         ataques_totales_correctos = res_atac["attacks_per_model"] * atacante_vivo
-        print(f"Atacante: {res_atac['name']} | Minis: {atacante_vivo} | Ataques totales: {ataques_totales_correctos:.2f}")
-        print(f"  Media de heridas causadas: {total_general:.2f}")
+        print(f"Atacante: {res_atac['name']} | Minis: {atacante_vivo} | Ataques totales: {redondear(ataques_totales_correctos)}")
+        print(f"  Media de heridas causadas: {redondear(total_general)}")
         
         # Mostrar detalle por arma
         mostrar_detalle_armas_en_combate(atacante_u, detalle, atacante_vivo)
@@ -426,8 +428,8 @@ def simular_combate_completo(atacante_u: Dict[str, Any], defensor_u: Dict[str, A
         
         # Calcular el total de ataques correctamente para el defensor
         ataques_totales_defensor = res_def_resp["attacks_per_model"] * defensor_vivo
-        print(f"Defensor: {res_def['name']} | Minis: {defensor_vivo} | Ataques totales: {ataques_totales_defensor:.2f}")
-        print(f"  Media de heridas causadas: {total_def:.2f}")
+        print(f"Defensor: {res_def['name']} | Minis: {defensor_vivo} | Ataques totales: {redondear(ataques_totales_defensor)}")
+        print(f"  Media de heridas causadas: {redondear(total_def)}")
         
         # Mostrar detalle por arma del defensor
         mostrar_detalle_armas_en_combate(defensor_u, detalle_def, defensor_vivo)
@@ -481,9 +483,9 @@ def mostrar_analisis_inicial(atacante_id: str, defensor_id: str, carga: bool = T
     total_general, detalle, res_atac, res_def = combate_media_multiarmas(atacante_u, defensor_u, carga=carga)
     
     # Mostrar resultados
-    print(f"— Atacante: {res_atac['name']}  modelos={res_atac['models']}, ataques_totales={res_atac['total_attacks']:.2f}, heridas_totales={res_atac['total_wounds']}")
+    print(f"— Atacante: {res_atac['name']}  modelos={res_atac['models']}, ataques_totales={int(res_atac['total_attacks'])}, heridas_totales={res_atac['total_wounds']}")
     print(f"— Defensor: {res_def['name']}   modelos={res_def['models']},  heridas_totales={res_def['total_wounds']}")
-    print(f"\nHeridas esperadas totales (todas las armas): {total_general:.2f}")
+    print(f"\nHeridas esperadas totales (todas las armas): {int(total_general)}")
 
     # Calcular bajas del defensor
     bajas_defensor = int(total_general // res_def['wounds_per_model']) if res_def['wounds_per_model'] else 0
@@ -502,7 +504,7 @@ def mostrar_analisis_inicial(atacante_id: str, defensor_id: str, carga: bool = T
         # El defensor ataca al atacante
         total_def, detalle_def, res_def_resp, res_atac_resp = combate_media_multiarmas(defensor_u_resp, atacante_u, carga=False)
         print(f"\nRespuesta del defensor:")
-        print(f"Heridas esperadas al atacante: {total_def:.2f}")
+        print(f"Heridas esperadas al atacante: {int(total_def)}")
         bajas_atacante = int(total_def // res_atac['wounds_per_model']) if res_atac['wounds_per_model'] else 0
         print(f"Bajas estimadas del atacante: {bajas_atacante}")
         models_atac_restantes = max(res_atac['models'] - bajas_atacante, 0)
@@ -522,18 +524,19 @@ def mostrar_analisis_inicial(atacante_id: str, defensor_id: str, carga: bool = T
     # Mostrar detalles por arma para el reporte inicial
     print("\n=== DETALLE POR ARMA ===")
     for nombre_arma, out in detalle:
-        total_arma = out["total_heridas"]
-        normales = out["heridas_finales_normales"]
-        mortales = out["mortales_post_ward"]
+        total_arma = int(out["total_heridas"])
+        normales = int(out["heridas_finales_normales"])
+        mortales = int(out["mortales_post_ward"])
+        salvadas = int(out.get('heridas_salvadas', 0))
         
         # Añadir información detallada de críticos
         crit_info = ""
         if out.get('crit_effect') == 'mortal_wounds':
-            crit_info = f" (incluye {int(mortales)} mortales)"
+            crit_info = f" (incluye {mortales} mortales)"
         elif out.get('crit_effect') == 'auto_wound':
             crit_info = f" (incluye {int(out.get('no_salv_autow_post_ward', 0))} de heridas automáticas)"
             
-        print(f"  - {nombre_arma}: total={total_arma:.2f} | normales={normales:.2f} | mortales={int(mortales)}{crit_info}")
+        print(f"  - {nombre_arma}: total={total_arma} | normales={normales} | mortales={mortales}{crit_info} | salvadas={salvadas}")
 
     # Simular combate completo
     simular_combate_completo(atacante_u, defensor_u)
@@ -545,8 +548,8 @@ def mostrar_analisis_inicial(atacante_id: str, defensor_id: str, carga: bool = T
 # guerreros saurios = 'a7ad4e3c-87b7-4182-9e8d-ce8dd0b1a03e'
 if __name__ == "__main__":
     print("=== SIMULADOR DE COMBATE AGE OF SIGMAR ===")
-    atacante_id = '7ff18894-a6e9-4203-94fa-fbea1f4ad227'  # kurnoths
-    defensor_id = '500c03e5-085b-4c5f-acbf-9d78a8d40591'  # guerreros saurios
+    atacante_id = '7ff18894-a6e9-4203-94fa-fbea1f4ad227'  
+    defensor_id = '500c03e5-085b-4c5f-acbf-9d78a8d40591'  
 
     # Ejecutar la simulación desde la función principal
     mostrar_analisis_inicial(atacante_id, defensor_id, carga=True)
@@ -564,9 +567,9 @@ def mostrar_resultados_simulacion(total_general: float, detalle: List[Tuple[str,
         res_def: Resumen del defensor
     """
     print(f"\n=== RESULTADOS DE LA SIMULACIÓN ===")
-    print(f"— Atacante: {res_atac['name']}  modelos={res_atac['models']}, ataques_totales={res_atac['total_attacks']:.2f}, heridas_totales={res_atac['total_wounds']}")
+    print(f"— Atacante: {res_atac['name']}  modelos={res_atac['models']}, ataques_totales={int(res_atac['total_attacks'])}, heridas_totales={res_atac['total_wounds']}")
     print(f"— Defensor: {res_def['name']}   modelos={res_def['models']},  heridas_totales={res_def['total_wounds']}")
-    print(f"\nHeridas esperadas totales (todas las armas): {total_general:.2f}")
+    print(f"\nHeridas esperadas totales (todas las armas): {int(total_general)}")
 
     # Calcular bajas del defensor
     bajas_defensor = int(total_general // res_def['wounds_per_model']) if res_def['wounds_per_model'] else 0
@@ -578,6 +581,7 @@ def mostrar_resultados_simulacion(total_general: float, detalle: List[Tuple[str,
     
     # Mostrar detalle por arma
     print("\nDetalle por arma:")
+    from utils import redondear
     for nombre_arma, out in detalle:
         total_arma = out["total_heridas"]
         normales = out["heridas_finales_normales"]
@@ -586,16 +590,16 @@ def mostrar_resultados_simulacion(total_general: float, detalle: List[Tuple[str,
         # Mostrar efectos de crítico si hay
         crit_info = ""
         if out.get('crit_effect') == 'mortal_wounds':
-            crit_info = f" → {mortales:.2f} mortales (ignoran armadura)"
+            crit_info = f" → {redondear(mortales)} mortales (ignoran armadura)"
         elif out.get('crit_effect') == 'auto_wound':
-            crit_info = f" → {int(out.get('no_salv_autow_post_ward', 0))} heridas auto."
+            crit_info = f" → {redondear(out.get('no_salv_autow_post_ward', 0))} heridas auto."
             
         # Mostrar el desglose de heridas normales y mortales
         desglose = ""
         if mortales > 0:
-            desglose = f" (normal={normales:.2f} + mort={mortales:.2f})"
+            desglose = f" (normal={redondear(normales)} + mort={redondear(mortales)})"
             
-        print(f"  - {nombre_arma}: total={total_arma:.2f}{desglose} | críticos={out.get('criticos', 0):.2f}{crit_info}")
+        print(f"  - {nombre_arma}: total={redondear(total_arma)}{desglose} | críticos={redondear(out.get('criticos', 0))}{crit_info}")
     
     return models_def_restantes
 
@@ -638,8 +642,8 @@ def simular_combate_completo(atacante_u: Dict[str, Any], defensor_u: Dict[str, A
         
         # Calcular el total de ataques correctamente (ataques por mini * minis)
         ataques_totales_correctos = res_atac["attacks_per_model"] * atacante_vivo
-        print(f"Atacante: {res_atac['name']} | Minis: {atacante_vivo} | Ataques totales: {ataques_totales_correctos:.2f}")
-        print(f"  Media de heridas causadas: {total_general:.2f}")
+        print(f"Atacante: {res_atac['name']} | Minis: {atacante_vivo} | Ataques totales: {redondear(ataques_totales_correctos)}")
+        print(f"  Media de heridas causadas: {redondear(total_general)}")
         
         # Mostrar detalle por arma
         mostrar_detalle_armas_en_combate(atacante_u, detalle, atacante_vivo)
@@ -657,8 +661,8 @@ def simular_combate_completo(atacante_u: Dict[str, Any], defensor_u: Dict[str, A
         
         # Calcular el total de ataques correctamente para el defensor
         ataques_totales_defensor = res_def_resp["attacks_per_model"] * defensor_vivo
-        print(f"Defensor: {res_def['name']} | Minis: {defensor_vivo} | Ataques totales: {ataques_totales_defensor:.2f}")
-        print(f"  Media de heridas causadas: {total_def:.2f}")
+        print(f"Defensor: {res_def['name']} | Minis: {defensor_vivo} | Ataques totales: {redondear(ataques_totales_defensor)}")
+        print(f"  Media de heridas causadas: {redondear(total_def)}")
         
         # Mostrar detalle por arma del defensor
         mostrar_detalle_armas_en_combate(defensor_u, detalle_def, defensor_vivo)
@@ -702,6 +706,7 @@ def mostrar_detalle_armas_en_combate(unidad: Dict[str, Any], detalle: List[Tuple
         detalle: Detalles de daño por arma
         miniaturas_vivas: Número de miniaturas vivas
     """
+    from utils import redondear
     armas = obtener_armas_de_unidad(unidad.get("id", ""))
     
     for nombre_arma, out in detalle:
@@ -719,7 +724,7 @@ def mostrar_detalle_armas_en_combate(unidad: Dict[str, Any], detalle: List[Tuple
         
         # Calcular críticos y efectos
         p_6 = 1.0 / 6.0
-        num_criticos = int(ataques_arma * p_6)
+        num_criticos = redondear(ataques_arma * p_6)
         
         # Formatear la información sobre críticos
         crit_info = ""
@@ -727,17 +732,17 @@ def mostrar_detalle_armas_en_combate(unidad: Dict[str, Any], detalle: List[Tuple
         heridas_mortales = out.get('mortales_post_ward', 0)
         
         if out.get('crit_effect') == 'mortal_wounds':
-            crit_info = f" → {int(heridas_mortales)} mortales (ignoran armadura)"
+            crit_info = f" → {redondear(heridas_mortales)} mortales (ignoran armadura)"
         elif out.get('crit_effect') == 'auto_wound':
-            crit_info = f" → {int(out.get('no_salv_autow_post_ward', 0))} heridas auto."
+            crit_info = f" → {redondear(out.get('no_salv_autow_post_ward', 0))} heridas auto."
             
         # Mostrar el desglose de heridas normales y mortales
         desglose = ""
         if heridas_mortales > 0:
-            desglose = f" (normal={heridas_normales:.2f} + mort={int(heridas_mortales)})"
+            desglose = f" (normal={redondear(heridas_normales)} + mort={redondear(heridas_mortales)})"
             
-        print(f"    - {nombre_arma}: ataques={ataques_arma:.2f} | criticos={num_criticos}{crit_info} | " 
-              f"heridas={out['total_heridas']:.2f}{desglose} | salvadas={out.get('heridas_salvadas', 0):.2f}")
+        print(f"    - {nombre_arma}: ataques={redondear(ataques_arma)} | criticos={num_criticos}{crit_info} | " 
+              f"heridas={redondear(out['total_heridas'])}{desglose} | salvadas={redondear(out.get('heridas_salvadas', 0))}")
 
 # Este código ha sido movido a la función mostrar_analisis_inicial
 
