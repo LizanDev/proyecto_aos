@@ -546,10 +546,11 @@ def mostrar_analisis_inicial(atacante_id: str, defensor_id: str, carga: bool = T
 # kurnoths = "7ff18894-a6e9-4203-94fa-fbea1f4ad227"
 # lanceros_en_agradon = "9da7561a-6b28-4eef-a6ee-10b93504d9a5"
 # guerreros saurios = 'a7ad4e3c-87b7-4182-9e8d-ce8dd0b1a03e'
+# reyesplaga = 'cefbb712-fea6-4a20-8549-e88075c0f129'
 if __name__ == "__main__":
     print("=== SIMULADOR DE COMBATE AGE OF SIGMAR ===")
     atacante_id = '7ff18894-a6e9-4203-94fa-fbea1f4ad227'  
-    defensor_id = '500c03e5-085b-4c5f-acbf-9d78a8d40591'  
+    defensor_id = 'cefbb712-fea6-4a20-8549-e88075c0f129'  
 
     # Ejecutar la simulación desde la función principal
     mostrar_analisis_inicial(atacante_id, defensor_id, carga=True)
