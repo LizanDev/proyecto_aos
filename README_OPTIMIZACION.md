@@ -54,3 +54,4 @@ mostrar_analisis_inicial('id_atacante', 'id_defensor', carga=True)
 ## Nota importante
 
 Esta optimización ha corregido el problema principal donde los ataques totales se estaban multiplicando incorrectamente. Ahora los cálculos de ataques son precisos y dan resultados correctos.
+x
