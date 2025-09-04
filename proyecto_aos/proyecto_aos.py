@@ -245,6 +245,10 @@ class SimState(rx.State):
         unidad2['base_size'] = int(unidad2.get('base_size', 1))
         unidad1['reinforced'] = bool(self.reinforced1)
         unidad2['reinforced'] = bool(self.reinforced2)
+        
+        # ¡IMPORTANTE! Pasar la bandera de campeón al diccionario que recibe el simulador
+        unidad1['champion'] = bool(self.champion1)
+        unidad2['champion'] = bool(self.champion2)
 
         # Ejecutar simulación teniendo en cuenta quién ha cargado: si la unidad derecha cargó,
         # hará el primer ataque y por tanto intercambiamos el orden al llamar al simulador.
