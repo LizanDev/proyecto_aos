@@ -141,7 +141,9 @@ def combate_media_multiarmas(unidad_atac: Dict[str, Any], unidad_def: Dict[str, 
 def mostrar_detalle_armas_en_combate(unidad: Dict[str, Any], detalle: List[Tuple[str, Dict[str, Any]]], miniaturas_vivas: int) -> None:
     from utils import redondear as _r
     armas = obtener_armas_de_unidad(unidad.get('id', ''))
-    for nombre_arma, out in detalle:
+    champion_flag = bool(unidad.get('champion', False))
+    
+    for idx, (nombre_arma, out) in enumerate(detalle):
         ataques_por_mini = 0.0
         for arma in armas:
             if arma.get('name', '') == nombre_arma:
@@ -150,7 +152,12 @@ def mostrar_detalle_armas_en_combate(unidad: Dict[str, Any], detalle: List[Tuple
                 elif arma.get('attacks_formula') is not None:
                     ataques_por_mini = dice_average(arma.get('attacks_formula'))
                 break
+        
+        # Calcular ataques totales para esta arma (incluyendo campeón para la primera arma)
         ataques_arma = ataques_por_mini * miniaturas_vivas
+        if idx == 0 and champion_flag:
+            ataques_arma += 1
+            
         p_6 = 1.0 / 6.0
         num_criticos = _r(ataques_arma * p_6)
 
@@ -174,17 +181,29 @@ def simular_combate_completo(atacante_u: Dict[str, Any], defensor_u: Dict[str, A
     ronda = 1
     atacante_vivo = int(atacante_u.get('base_size', 1)) * (2 if bool(atacante_u.get('reinforced', False)) else 1)
     defensor_vivo = int(defensor_u.get('base_size', 1)) * (2 if bool(defensor_u.get('reinforced', False)) else 1)
+    
+    # Tracking de heridas acumuladas
+    heridas_acumuladas_atacante = 0.0
+    heridas_acumuladas_defensor = 0.0
+    
     atacante_u = dict(atacante_u)
     defensor_u = dict(defensor_u)
     atacante_nombre = atacante_u.get('name', 'Atacante')
     defensor_nombre = defensor_u.get('name', 'Defensor')
+    
+    wounds_per_model_atacante = int(atacante_u.get('wounds', 1))
+    wounds_per_model_defensor = int(defensor_u.get('wounds', 1))
 
     while atacante_vivo > 0 and defensor_vivo > 0 and ronda <= max_rondas:
         print(f"\n--- Ronda {ronda} ---")
         atacante_u['current_models'] = atacante_vivo
         defensor_u['current_models'] = defensor_vivo
         total_general, detalle, res_atac, res_def = combate_media_multiarmas(atacante_u, defensor_u, carga=(ronda==1))
-        bajas_defensor = int(total_general // res_def['wounds_per_model']) if res_def['wounds_per_model'] else 0
+        
+        # Acumular heridas al defensor
+        heridas_acumuladas_defensor += total_general
+        bajas_defensor = int(heridas_acumuladas_defensor // wounds_per_model_defensor)
+        heridas_acumuladas_defensor = heridas_acumuladas_defensor % wounds_per_model_defensor  # Resto de heridas
         defensor_vivo = max(defensor_vivo - bajas_defensor, 0)
 
         # Mostrar ataques totales calculados de forma consistente con combate_media_multiarmas
@@ -202,7 +221,11 @@ def simular_combate_completo(atacante_u: Dict[str, Any], defensor_u: Dict[str, A
 
         defensor_u['current_models'] = defensor_vivo
         total_def, detalle_def, res_def_resp, res_atac_resp = combate_media_multiarmas(defensor_u, atacante_u, carga=False)
-        bajas_atacante = int(total_def // res_atac['wounds_per_model']) if res_atac['wounds_per_model'] else 0
+        
+        # Acumular heridas al atacante
+        heridas_acumuladas_atacante += total_def
+        bajas_atacante = int(heridas_acumuladas_atacante // wounds_per_model_atacante)
+        heridas_acumuladas_atacante = heridas_acumuladas_atacante % wounds_per_model_atacante  # Resto de heridas
         atacante_vivo = max(atacante_vivo - bajas_atacante, 0)
 
         ataques_totales_defensor = float(res_def_resp.get('attacks_per_model', 0.0)) * defensor_vivo
@@ -272,8 +295,8 @@ def mostrar_analisis_inicial(atacante_id: str, defensor_id: str, carga: bool = T
 # reyesplaga = 'cefbb712-fea6-4a20-8549-e88075c0f129'
 if __name__ == "__main__":
     print("=== SIMULADOR DE COMBATE AGE OF SIGMAR ===")
-    atacante_id = '7ff18894-a6e9-4203-94fa-fbea1f4ad227'  
-    defensor_id = 'cefbb712-fea6-4a20-8549-e88075c0f129'  
+    atacante_id = '47b962af-2618-40c1-98ad-ec9f803dd7ba'  
+    defensor_id = '826230c9-009c-4c10-9d3d-7aa97c9b5739'  
 
     # Ejecutar la simulación desde la función principal
     mostrar_analisis_inicial(atacante_id, defensor_id, carga=True)
