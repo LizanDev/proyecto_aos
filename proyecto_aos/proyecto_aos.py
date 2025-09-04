@@ -33,6 +33,7 @@ class SimState(rx.State):
 
     result_text: str = ""
     result_lines: list[str] = []
+    result_output: str = ""
 
     unit1_attrs: dict = {}
     unit2_attrs: dict = {}
@@ -226,13 +227,42 @@ class SimState(rx.State):
         if not uid1 or not uid2:
             self.result_text = "Selecciona faccion y unidad en ambos lados"
             self.result_lines = []
+            self.result_output = ""
             return
-        
-        self.result_text = "Simulacion lista"
-        self.result_lines = [
-            f"unit1={self.unit1_name} (id={uid1}) charge={self.charge1} bonus={self.bonus1}",
-            f"unit2={self.unit2_name} (id={uid2}) charge={self.charge2} bonus={self.bonus2}",
-         ]
+
+        # Construir diccionarios de unidad con los atributos actuales para pasarlos al simulador
+        from services.unidad_service import obtener_unidad_por_id
+        from simulador import simular_combate_completo_str
+
+        unidad1 = obtener_unidad_por_id(uid1) or {}
+        unidad2 = obtener_unidad_por_id(uid2) or {}
+
+        # Actualizar atributos relevantes antes de simular
+        unidad1 = dict(unidad1)
+        unidad2 = dict(unidad2)
+        # No multipliques base_size aquí: el simulador ya respeta la bandera 'reinforced'
+        unidad1['base_size'] = int(unidad1.get('base_size', 1))
+        unidad2['base_size'] = int(unidad2.get('base_size', 1))
+        unidad1['reinforced'] = bool(self.reinforced1)
+        unidad2['reinforced'] = bool(self.reinforced2)
+
+        # Ejecutar simulación teniendo en cuenta quién ha cargado: si la unidad derecha cargó,
+        # hará el primer ataque y por tanto intercambiamos el orden al llamar al simulador.
+        try:
+            if bool(self.charge2) and not bool(self.charge1):
+                # Unidad 2 ha cargado: atacará primero
+                salida = simular_combate_completo_str(unidad2, unidad1, max_rondas=10)
+            else:
+                # Por defecto, unidad1 ataca primero (incluye caso en que ambos o ninguno cargaron)
+                salida = simular_combate_completo_str(unidad1, unidad2, max_rondas=10)
+
+            self.result_text = "Simulación ejecutada"
+            self.result_output = salida
+            self.result_lines = salida.splitlines()
+        except Exception as e:
+            self.result_text = "Error al ejecutar simulación"
+            self.result_output = str(e)
+            self.result_lines = [str(e)]
 
 def side_card(title: str, left: bool) -> rx.Component:
     S = SimState
@@ -345,13 +375,31 @@ def index() -> rx.Component:
             rx.text("Simulador de Combate", class_name="text-3xl font-bold text-center"),
             rx.text("Warhammer Age of Sigmar", class_name="text-sm opacity-70 text-center"),
             rx.grid(
-                side_card("Atacante", True),
-                side_card("Defensor", False),
+                side_card("Unidad 1", True),
+                side_card("Unidad 2", False),
                 class_name="w-full grid grid-cols-1 lg:grid-cols-2 gap-6",
             ),
-            class_name="w-full mx-auto py-8 space-y-8",
+            rx.hstack(
+                rx.button("Simular", on_click=SimState.simulate, class_name="px-4 py-2 bg-blue-600 rounded text-white"),
+                rx.box(style={"flex": 1}),
+            ),
+            rx.cond(
+                SimState.result_output != "",
+                rx.box(
+                    rx.text("Salida de la simulación:", class_name="text-sm font-semibold"),
+                    rx.text_area(
+                        value=SimState.result_output,
+                        read_only=True,
+                        class_name="w-full h-80 mt-2 p-2 bg-zinc-900 text-sm",
+                        style={"width": "100%"},
+                    ),
+                    class_name="p-4 rounded bg-zinc-800 w-full",
+                    style={"width": "100%"},
+                ),
+            ),
+            class_name="w-full py-8 space-y-8",
         ),
-        class_name="w-full px-4 md:px-12",  # <-- padding lateral aquí
+        class_name="w-full px-0",  # quitar padding lateral para ocupar todo el ancho
     )
 
 app = rx.App()
