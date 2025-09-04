@@ -3,7 +3,9 @@ from supabase import create_client
 from dotenv import load_dotenv
 from typing import Optional, Dict, List
 
+# Cargar variables de entorno desde .env
 load_dotenv()
+
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY", os.getenv("SUPABASE_KEY", ""))
 sb = create_client(SUPABASE_URL, SUPABASE_KEY)
