@@ -1,7 +1,9 @@
-reflex
-supabase
-python-dotenv
-fastapi
-uvicorn
-pydantic
-reflex==0.8.6
+reflex==0.8.8
+supabase==2.18.0
+python-dotenv==1.1.1
+fastapi==0.116.1
+uvicorn==0.35.0
+pydantic==2.11.7
+sqlmodel==0.0.24
+watchfiles==1.1.0
+python-multipart==0.0.20
