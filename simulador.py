@@ -106,9 +106,13 @@ def combate_media_multiarmas(unidad_atac: Dict[str, Any], unidad_def: Dict[str, 
         crit_effect = perfil.get('crit_effect') or 'none'
         out['crit_effect'] = crit_effect
 
-        heridas_totales = out.get('heridas_normales', 0) + out.get('auto_wound', 0)
-        no_salvadas = out.get('no_salv_normales', 0) + out.get('no_salv_autow', 0)
-        out['heridas_salvadas'] = heridas_totales - no_salvadas
+        # Calcular heridas salvadas correctamente
+        # Heridas antes de cualquier salvación (armadura + ward)
+        heridas_antes_salvacion = out.get('heridas_normales', 0) + out.get('auto_wound', 0)
+        # Heridas finales (ya incluye todas las defensas aplicadas)
+        heridas_finales = out.get('total_heridas', 0)
+        # Heridas salvadas = diferencia entre antes y después de todas las salvaciones
+        out['heridas_salvadas'] = max(0.0, heridas_antes_salvacion - heridas_finales)
 
         total_heridas += out.get('total_heridas', 0)
         detalle.append((arma.get('name', 'arma'), out))
