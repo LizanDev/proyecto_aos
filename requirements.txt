@@ -31,3 +31,5 @@ starlette==0.47.3
 websockets==15.0.1
 wrapt==1.17.3
 wsproto==1.2.0
+
+reflex==0.8.9
