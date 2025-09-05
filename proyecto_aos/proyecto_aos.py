@@ -268,6 +268,30 @@ class SimState(rx.State):
             self.result_output = str(e)
             self.result_lines = [str(e)]
 
+    def clear_all(self):
+        """Resetea todos los valores seleccionados y el output de la simulación"""
+        self.faction1_name = ""
+        self.faction2_name = ""
+        self.unit1_name = ""
+        self.unit2_name = ""
+        self.charge1 = False
+        self.charge2 = False
+        self.bonus1 = ""
+        self.bonus2 = ""
+        self.reinforced1 = False
+        self.reinforced2 = False
+        self.champion1 = False
+        self.champion2 = False
+        self.result_text = ""
+        self.result_lines = []
+        self.result_output = ""
+        self.units1_names = []
+        self.units1_map = {}
+        self.units2_names = []
+        self.units2_map = {}
+        self.unit1_attrs = {}
+        self.unit2_attrs = {}
+
 def side_card(title: str, left: bool) -> rx.Component:
     S = SimState
     fac_val, set_fac = (S.faction1_name, S.set_faction1_name) if left else (S.faction2_name, S.set_faction2_name)
@@ -384,8 +408,66 @@ def index() -> rx.Component:
                 class_name="w-full grid grid-cols-1 lg:grid-cols-2 gap-6",
             ),
             rx.hstack(
-                rx.button("Simular", on_click=SimState.simulate, class_name="px-4 py-2 bg-blue-600 rounded text-white"),
-                rx.box(style={"flex": 1}),
+                rx.spacer(),
+                rx.button(
+                    "Simular", 
+                    on_click=SimState.simulate,
+                    style={
+                        "background": "#fff",
+                        "color": "#1AAB8A",
+                        "border": "2px solid #1AAB8A",
+                        "padding": "16px 20px",
+                        "borderRadius": "3px",
+                        "position": "relative",
+                        "fontSize": "1.4em",
+                        "fontWeight": "bold",
+                        "minWidth": "140px",
+                        "height": "60px",
+                        "cursor": "pointer",
+                        "transition": "all 0.3s ease",
+                        "textAlign": "center",
+                        "lineHeight": "1",
+                        "_hover": {
+                            "color": "#fff",
+                            "background": "#1AAB8A",
+                            "transform": "scale(1.02)",
+                            "boxShadow": "0 4px 15px rgba(26, 171, 138, 0.4)"
+                        }
+                    }
+                ),
+                rx.button(
+                    "Reset", 
+                    on_click=SimState.clear_all,
+                    style={
+                        "background": "#fff",
+                        "color": "#DC2626",
+                        "border": "2px solid #DC2626",
+                        "padding": "16px 20px",
+                        "borderRadius": "3px",
+                        "position": "relative",
+                        "fontSize": "1.4em",
+                        "fontWeight": "bold",
+                        "minWidth": "140px",
+                        "height": "60px",
+                        "cursor": "pointer",
+                        "transition": "all 0.3s ease",
+                        "marginLeft": "8px",
+                        "textAlign": "center",
+                        "lineHeight": "1",
+                        "_hover": {
+                            "color": "#fff",
+                            "background": "#DC2626",
+                            "transform": "scale(1.02)",
+                            "boxShadow": "0 4px 15px rgba(220, 38, 38, 0.4)"
+                        }
+                    }
+                ),
+                rx.spacer(),
+                class_name="w-full justify-center items-center gap-2",
+                style={
+                    "padding": "5px 0",
+                    "minHeight": "70px"
+                }
             ),
             rx.cond(
                 SimState.result_output != "",
@@ -401,7 +483,7 @@ def index() -> rx.Component:
                     style={"width": "100%"},
                 ),
             ),
-            class_name="w-full py-8 space-y-8",
+            class_name="w-full py-8 space-y-4",
         ),
         class_name="w-full px-0",  # quitar padding lateral para ocupar todo el ancho
     )
