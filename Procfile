@@ -1,1 +1,1 @@
-web: reflex run --env prod --backend-only 0.0.0.0 --port $PORT
+web: reflex run --env prod --port \${PORT:-8000} --host 0.0.0.0
