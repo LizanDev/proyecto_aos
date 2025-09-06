@@ -1,0 +1,1 @@
+web: reflex run --env prod --backend-only 0.0.0.0 --port $PORT
