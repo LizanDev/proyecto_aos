@@ -1,4 +1,4 @@
-reflex==0.8.9
-supabase==2.18.1
-python-dotenv==1.1.1
-SQLAlchemy==2.0.43
+reflex
+supabase
+python-dotenv
+SQLAlchemy
