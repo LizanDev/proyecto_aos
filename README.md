@@ -1,5 +1,6 @@
 # 🚀 Proyecto AOS
 > ⚠️ **Estado:** Proyecto en proceso. Actualmente solo hay 3 facciones insertadas en la base de datos.
+> Agregados Ironjaw y Mandamaloz
 
 ¡Bienvenido/a al repositorio de **Proyecto AOS**! Este proyecto es una plataforma moderna que utiliza **Python** para el backend y **Reflex** para el frontend, con integración completa a **Supabase** para autenticación y gestión de base de datos.
 
