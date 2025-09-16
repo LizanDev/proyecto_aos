@@ -55,6 +55,10 @@ def _impactos_promedio(attacker: dict):
         # los 6s se convierten en heridas automáticas y no tiran para herir
         auto_wounds = total_attacks * p_6
         impactos_normales = max(0.0, impactos_normales - total_attacks * p_6)
+    elif crit_effect == "impactos_dobles":
+        # los 6s generan impactos dobles (2 impactos en lugar de 1)
+        impactos_criticos = total_attacks * p_6
+        impactos_normales = impactos_normales - impactos_criticos + (impactos_criticos * 2)
 
     # Asegura tupla válida SIEMPRE
     return (models, total_attacks, impactos_normales, auto_wounds, mortal_wounds)
