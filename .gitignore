@@ -12,3 +12,6 @@ __pycache__/
 .cursor
 requirements.txt
 .venv/
+
+# Test files
+test_*.py

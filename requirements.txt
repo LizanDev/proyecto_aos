@@ -2,3 +2,4 @@ reflex
 supabase
 python-dotenv
 SQLAlchemy
+reflex==0.8.11

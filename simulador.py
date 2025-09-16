@@ -100,7 +100,19 @@ def combate_media_multiarmas(unidad_atac: Dict[str, Any], unidad_def: Dict[str, 
         total_attacks_arma = perfil['attacks'] * models_atac
         if idx == 0 and champion_flag:
             total_attacks_arma += 1
-        num_criticos = int(total_attacks_arma * (1.0 / 6.0))
+        
+        # Calcular críticos esperados
+        from utils import redondear
+        import math
+        criticos_raw = total_attacks_arma * (1.0 / 6.0)
+        
+        # Si hay un efecto crítico activo y los críticos calculados son < 1, mostrar al menos 1
+        crit_effect = perfil.get('crit_effect') or 'none'
+        if crit_effect != 'none' and criticos_raw > 0 and criticos_raw < 1:
+            num_criticos = 1
+        else:
+            num_criticos = redondear(criticos_raw)
+        
         out['criticos'] = num_criticos
 
         crit_effect = perfil.get('crit_effect') or 'none'
@@ -163,7 +175,14 @@ def mostrar_detalle_armas_en_combate(unidad: Dict[str, Any], detalle: List[Tuple
             ataques_arma += 1
             
         p_6 = 1.0 / 6.0
-        num_criticos = _r(ataques_arma * p_6)
+        criticos_raw = ataques_arma * p_6
+        
+        # Si hay un efecto crítico activo y los críticos calculados son < 1, mostrar al menos 1
+        crit_effect = out.get('crit_effect') or 'none'
+        if crit_effect != 'none' and criticos_raw > 0 and criticos_raw < 1:
+            num_criticos = 1
+        else:
+            num_criticos = _r(criticos_raw)
 
         crit_info = ''
         heridas_normales = out.get('heridas_finales_normales', 0)
@@ -172,6 +191,8 @@ def mostrar_detalle_armas_en_combate(unidad: Dict[str, Any], detalle: List[Tuple
             crit_info = f" → {_r(heridas_mortales)} mortales (ignoran armadura)"
         elif out.get('crit_effect') == 'auto_wound':
             crit_info = f" → {_r(out.get('no_salv_autow_post_ward', 0))} heridas auto."
+        elif out.get('crit_effect') == 'impactos_dobles':
+            crit_info = f" → impactos dobles"
 
         desglose = ''
         if heridas_mortales > 0:
@@ -344,6 +365,8 @@ def mostrar_resultados_simulacion(total_general: float, detalle: List[Tuple[str,
             crit_info = f" → {redondear(mortales)} mortales (ignoran armadura)"
         elif out.get('crit_effect') == 'auto_wound':
             crit_info = f" → {redondear(out.get('no_salv_autow_post_ward', 0))} heridas auto."
+        elif out.get('crit_effect') == 'impactos_dobles':
+            crit_info = f" → impactos dobles"
             
         # Mostrar el desglose de heridas normales y mortales
         desglose = ""
